@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>エステSNSアシスタント</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #fdfaf7;
+            color: #5a524d;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 450px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.4rem;
+            color: #bca07e;
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #e0d8d0;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #bca07e;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .result-area {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #fcfcfc;
+            border-radius: 10px;
+            border: 1px dashed #bca07e;
+            white-space: pre-wrap;
+            min-height: 150px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Salon Post Assistant</h1>
+    
+    <label for="topic">トピックを入力（例：むくみ、乾燥）</label>
+    <input type="text" id="topic" placeholder="何について書きますか？">
+
+    <label for="tone">文章の雰囲気</label>
+    <select id="tone">
+        <option value="親しみやすく優しい">親しみやすく優しい</option>
+        <option value="美容のプロとして誠実な">美容のプロとして誠実な</option>
+        <option value="明るくワクワクする">明るくワクワクする</option>
+    </select>
+
+    <button onclick="generateText()">AIに文章を作成してもらう</button>
+
+    <div id="result" class="result-area">ここにAIの文章が表示されます。</div>
+</div>
+
+<script>
+    async function generateText() {
+        const topic = document.getElementById('topic').value;
+        const tone = document.getElementById('tone').value;
+        const resultArea = document.getElementById('result');
+
+        if (!topic) {
+            alert("トピックを入れてくださいね");
+            return;
+        }
+
+        resultArea.innerText = "考え中...✨";
+
+        try {
+            // Vercel上のAPI（サーバー側）に命令を送る設定
+            const response = await fetch("/api/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    messages: [
+                        { role: "system", content: "あなたはプロのエステティシャンです。Instagram用の投稿文を作ってください。" },
+                        { role: "user", content: `「${topic}」について「${tone}」雰囲気で、ハッシュタグも5つ付けて作成してください。` }
+                    ]
+                })
+            });
+
+            const data = await response.json();
+            resultArea.innerText = data.choices[0].message.content;
+        } catch (error) {
+            resultArea.innerText = "エラーが起きました。Vercelの設定を確認してください。";
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>
