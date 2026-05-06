@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>エステSNSアシスタント</title>
+    <title>Salon Post Assistant | felice</title>
     <style>
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #fdfaf7;
-            color: #5a524d;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
+            background-color: #fcfaf8; /* 柔らかいオフホワイト */
+            color: #4a4a4a;
             margin: 0;
             padding: 20px;
             display: flex;
@@ -16,97 +16,128 @@
         }
         .container {
             background-color: #ffffff;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 40px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
             width: 100%;
             max-width: 450px;
         }
         h1 {
             text-align: center;
-            font-size: 1.4rem;
-            color: #bca07e;
-            margin-bottom: 25px;
+            font-size: 1.1rem;
+            color: #8c8279; /* グレージュ系 */
+            letter-spacing: 0.1em;
+            margin-bottom: 35px;
+            font-weight: 300;
         }
         label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            font-size: 0.9rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #8c8279;
+            text-transform: uppercase;
         }
         input, select {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #e0d8d0;
-            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
             box-sizing: border-box;
+            font-size: 0.95rem;
+            background-color: #fafafa;
         }
         button {
             width: 100%;
-            padding: 15px;
-            background-color: #bca07e;
+            padding: 16px;
+            background-color: #8c8279;
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
         }
+        button:hover { background-color: #6d645d; }
         .result-area {
-            margin-top: 25px;
-            padding: 15px;
-            background-color: #fcfcfc;
-            border-radius: 10px;
-            border: 1px dashed #bca07e;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 4px;
+            border: 1px solid #eee;
             white-space: pre-wrap;
-            min-height: 150px;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: #333;
+            min-height: 200px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Salon Post Assistant</h1>
+    <h1>SALON POST ASSISTANT</h1>
     
-    <label for="topic">トピックを入力（例：むくみ、乾燥）</label>
-    <input type="text" id="topic" placeholder="何について書きますか？">
+    <label for="topic">トピック</label>
+    <input type="text" id="topic" placeholder="例：毛穴ケアの重要性、新メニュー">
 
-    <label for="tone">文章の雰囲気</label>
-    <select id="tone">
-        <option value="親しみやすく優しい">親しみやすく優しい</option>
-        <option value="美容のプロとして誠実な">美容のプロとして誠実な</option>
-        <option value="明るくワクワクする">明るくワクワクする</option>
+    <label for="postType">投稿タイプ</label>
+    <select id="postType">
+        <option value="通常フィード投稿（お客様の悩みに寄り添い、プロの視点で解説する丁寧な長文）">フィード投稿（丁寧・解説）</option>
+        <option value="ストーリーズ用（大切なポイントだけをミニマルに伝える、洗練された短文）">ストーリーズ（簡潔・洗練）</option>
     </select>
 
-    <button onclick="generateText()">AIに文章を作成してもらう</button>
+    <label for="tone">文章のニュアンス</label>
+    <select id="tone">
+        <option value="落ち着いた、誠実で信頼感のある">落ち着き・信頼</option>
+        <option value="シンプルで凛とした、都会的な">シンプル・凛とした</option>
+        <option value="穏やかで、優しく包み込むような">穏やか・優しさ</option>
+    </select>
 
-    <div id="result" class="result-area">ここにAIの文章が表示されます。</div>
+    <button onclick="generateText()">文章を構成する</button>
+
+    <div id="result" class="result-area">ここに文章が表示されます。</div>
 </div>
 
 <script>
     async function generateText() {
         const topic = document.getElementById('topic').value;
+        const postType = document.getElementById('postType').value;
         const tone = document.getElementById('tone').value;
         const resultArea = document.getElementById('result');
 
         if (!topic) {
-            alert("トピックを入れてくださいね");
+            alert("トピックを入力してください");
             return;
         }
 
-        resultArea.innerText = "考え中...✨";
+        resultArea.innerText = "執筆中...";
 
         try {
-            // Vercel上のAPI（サーバー側）に命令を送る設定
             const response = await fetch("/api/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "gpt-4o",
                     messages: [
-                        { role: "system", content: "あなたはプロのエステティシャンです。Instagram用の投稿文を作ってください。" },
-                        { role: "user", content: `「${topic}」について「${tone}」雰囲気で、ハッシュタグも5つ付けて作成してください。` }
+                        { 
+                            role: "system", 
+                            content: `あなたは「felice.kaho」というアカウントを運営する、非常に洗練されたセンスを持つプロのエステティシャンです。
+                            
+                            【文章スタイルのルール】
+                            1. 誠実、知的、かつ温かみのあるトーン。過度な勧誘や煽りはしない。
+                            2. 絵文字は「✨」「🌿」「🤍」「🕯️」など、落ち着いたトーンのものを文末に1つ置く程度にする。
+                            3. 顔文字（ (^^) など）は絶対に、一切使用しない。
+                            4. 改行を適切に入れ、読み手が「余白」を感じられる美しいレイアウトにする。
+                            5. 専門的な知識を、お客様の悩みに寄り添う言葉で解釈して伝える。
+                            6. 指定された投稿タイプ（フィードまたはストーリー）に最適な長さに調節する。`
+                        },
+                        { 
+                            role: "user", 
+                            content: `「${topic}」について、${postType}を作成してください。ニュアンスは「${tone}」で、最後にハッシュタグを5つ添えてください。` 
+                        }
                     ]
                 })
             });
@@ -114,8 +145,7 @@
             const data = await response.json();
             resultArea.innerText = data.choices[0].message.content;
         } catch (error) {
-            resultArea.innerText = "エラーが起きました。Vercelの設定を確認してください。";
-            console.error(error);
+            resultArea.innerText = "接続に失敗しました。";
         }
     }
 </script>
