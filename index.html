@@ -49,11 +49,10 @@
             background-color: #fafafa;
             font-family: inherit;
         }
-        textarea {
-            height: 120px;
-            resize: none;
-        }
-        button {
+        textarea { height: 120px; resize: none; }
+        
+        /* メインボタン */
+        .btn-generate {
             width: 100%;
             padding: 18px;
             background-color: #8c8279;
@@ -63,9 +62,27 @@
             cursor: pointer;
             font-size: 0.9rem;
             letter-spacing: 0.2em;
+            font-weight: 500;
             transition: all 0.3s ease;
         }
-        button:hover { background-color: #6d645d; }
+        .btn-generate:hover { background-color: #6d645d; }
+
+        /* コピーボタン */
+        .btn-copy {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background-color: #fff;
+            color: #8c8279;
+            border: 1px solid #8c8279;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: none; /* 初期状態は非表示 */
+            transition: all 0.3s ease;
+        }
+        .btn-copy:hover { background-color: #fcfaf8; }
+
         .result-area {
             margin-top: 30px;
             padding: 25px;
@@ -76,7 +93,7 @@
             font-size: 0.9rem;
             line-height: 1.9;
             color: #333;
-            min-height: 250px;
+            min-height: 200px;
         }
     </style>
 </head>
@@ -86,20 +103,22 @@
     <h1>SALON POST ASSISTANT</h1>
     
     <label for="topic">1. トピック（必須）</label>
-    <input type="text" id="topic" placeholder="例：冬の乾燥対策、巡りの改善">
+    <input type="text" id="topic" placeholder="例：冬の乾燥対策">
 
     <label for="sourceInfo">2. 参考情報・メモ（任意）</label>
-    <textarea id="sourceInfo" placeholder="参考URLや具体的なエピソードを入力してください"></textarea>
+    <textarea id="sourceInfo" placeholder="参考情報などを入力してください"></textarea>
 
     <label for="postType">3. 投稿タイプの仕分け</label>
     <select id="postType">
-        <option value="通常フィード投稿（300-500文字程度。悩み・原因・解決策を丁寧に解説する構成）">通常投稿（しっかり解説）</option>
-        <option value="ストーリーズ用（100文字以内。要点をミニマルに伝える簡潔な構成）">ストーリーズ（簡潔・短文）</option>
+        <option value="通常フィード投稿（300-500文字程度。丁寧な解説構成）">通常投稿（しっかり解説）</option>
+        <option value="ストーリーズ用（100文字以内。簡潔な構成）">ストーリーズ（簡潔・短文）</option>
     </select>
 
-    <button onclick="generateText()">文章を構成する</button>
+    <button class="btn-generate" onclick="generateText()">文章を構成する</button>
 
     <div id="result" class="result-area">ここに文章が表示されます。</div>
+    
+    <button id="copyBtn" class="btn-copy" onclick="copyResult()">文章をコピーする</button>
 </div>
 
 <script>
@@ -108,13 +127,15 @@
         const sourceInfo = document.getElementById('sourceInfo').value;
         const postType = document.getElementById('postType').value;
         const resultArea = document.getElementById('result');
+        const copyBtn = document.getElementById('copyBtn');
 
         if (!topic) {
             alert("トピックを入力してください");
             return;
         }
 
-        resultArea.innerText = "feliceのスタイルで執筆中...";
+        resultArea.innerText = "執筆中...";
+        copyBtn.style.display = "none"; // 再生成時は隠す
 
         try {
             const response = await fetch("/api/generate", {
@@ -125,35 +146,42 @@
                     messages: [
                         { 
                             role: "system", 
-                            content: `あなたはサロン「felice」のオーナーエステティシャンです。以下のルールを「絶対」に守って執筆してください。
-
-                            【文章ルール】
-                            ・凛とした誠実な敬語（〜です、〜ます）。顔文字は絶対禁止。
-                            ・絵文字は文末に落ち着いたものを1つ置くのみ。
-                            ・根本的な体質改善（自律神経、血液、内臓等）を軸にした専門的な内容。
-                            ・投稿タイプに合わせ、長さを厳密に調整する。
-
-                            【ハッシュタグの絶対ルール】
-                            ハッシュタグは必ず以下の5つのみを、文章の最後に記載してください。
-                            1. #体質改善 （固定）
-                            2. #肌質改善 （固定）
-                            3. #女性特有の症状 （固定）
-                            4. 内容に合わせた関連タグ1
-                            5. 内容に合わせた関連タグ2`
+                            content: `あなたはサロン「felice」のエステティシャンです。
+                            【ルール】顔文字禁止。絵文字は文末に1つ。凛とした誠実な敬語。
+                            ハッシュタグは必ず以下の5つ：
+                            #体質改善 #肌質改善 #女性特有の症状 + 内容に合うタグ2つ`
                         },
                         { 
                             role: "user", 
-                            content: `トピック：${topic}\n参考情報：${sourceInfo}\n投稿タイプ：${postType}\n\nハッシュタグは指定された3つを必ず含め、合計5つで出力してください。` 
+                            content: `トピック：${topic}\n参考情報：${sourceInfo}\n投稿タイプ：${postType}` 
                         }
                     ]
                 })
             });
 
             const data = await response.json();
-            resultArea.innerText = data.choices[0].message.content;
+            const text = data.choices[0].message.content;
+            resultArea.innerText = text;
+            
+            // 生成が完了したらコピーボタンを表示
+            copyBtn.style.display = "block";
         } catch (error) {
             resultArea.innerText = "接続に失敗しました。";
         }
+    }
+
+    // コピー機能
+    function copyResult() {
+        const text = document.getElementById('result').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const copyBtn = document.getElementById('copyBtn');
+            copyBtn.innerText = "コピーしました！";
+            setTimeout(() => {
+                copyBtn.innerText = "文章をコピーする";
+            }, 2000);
+        }).catch(err => {
+            alert("コピーに失敗しました。");
+        });
     }
 </script>
 
